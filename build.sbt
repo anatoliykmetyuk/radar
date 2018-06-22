@@ -17,6 +17,9 @@ val Sttp   = "1.2.1"
 val ScalaTest  = "3.0.5"
 val ScalaCheck = "1.14.0"
 
+// Specialized non-FP
+val Scraper = "2.1.0"
+
 // Java Utility
 val CommonsIO      = "2.6"
 val Jsoup          = "1.11.3"
@@ -52,6 +55,9 @@ lazy val commonSettings = Seq(
     // Test
   , "org.scalatest"  %% "scalatest"  % ScalaTest  % "test"
   , "org.scalacheck" %% "scalacheck" % ScalaCheck % "test"
+
+    // Specialized non-FP
+  , "net.ruippeixotog" %% "scala-scraper" % Scraper
 
     // Java Utility
   , "commons-io"     % "commons-io"   % CommonsIO

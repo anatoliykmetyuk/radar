@@ -1,0 +1,23 @@
+version: '3'
+services:
+  postgres:
+    container_name: radar_db
+    build: postgres
+    ports:
+      - 5432:5432
+    # volumes:
+    #   - pgdata:/var/lib/postgresql/data
+  backend:
+    container_name: radar
+    build: .
+    ports:
+      - 8888:8888
+    volumes:
+      - home:/root
+      - .:/root/radar
+    stdin_open: true
+    tty: true
+
+volumes:
+  # pgdata:
+  home:

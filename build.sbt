@@ -5,13 +5,15 @@ val Cats          = "1.1.0"
 val CatsEffect    = "0.10.1"
 val KindProjector = "0.9.7"
 val Shapeless     = "2.3.3"
+val Akka          = "2.5.13"
 
 // Specialized
-val FS2    = "0.10.5"
-val Doobie = "0.6.0-M1"
-val Circe  = "0.9.3"
-val Http4s = "0.18.13"
-val Sttp   = "1.2.1"
+val FS2       = "0.10.5"
+val Doobie    = "0.6.0-M1"
+val Circe     = "0.9.3"
+val CirceYaml = "0.8.0"
+val Http4s    = "0.18.13"
+val Sttp      = "1.2.1"
 
 // Tests
 val ScalaTest  = "3.0.5"
@@ -31,9 +33,11 @@ lazy val commonSettings = Seq(
 , scalaVersion := ScalaVer
 , libraryDependencies ++= Seq(
     // Core
-    "org.typelevel"  %% "cats-core"   % Cats
-  , "org.typelevel"  %% "cats-effect" % CatsEffect
-  , "com.chuusai"    %% "shapeless"   % Shapeless
+    "org.typelevel"     %% "cats-core"   % Cats
+  , "org.typelevel"     %% "cats-effect" % CatsEffect
+  , "com.chuusai"       %% "shapeless"   % Shapeless
+  , "com.typesafe.akka" %% "akka-actor"  % Akka
+  , "com.typesafe.akka" %% "akka-slf4j"  % Akka
 
     // Specialized
   , "co.fs2"       %% "fs2-core"            % FS2
@@ -43,6 +47,7 @@ lazy val commonSettings = Seq(
   , "io.circe"     %% "circe-core"          % Circe
   , "io.circe"     %% "circe-generic"       % Circe
   , "io.circe"     %% "circe-parser"        % Circe
+  , "io.circe"     %% "circe-yaml"          % CirceYaml
   , "org.http4s"   %% "http4s-dsl"          % Http4s
   , "org.http4s"   %% "http4s-circe"        % Http4s
   , "org.http4s"   %% "http4s-blaze-server" % Http4s

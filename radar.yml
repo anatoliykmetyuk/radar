@@ -1,0 +1,4 @@
+targets:
+  fb-event:
+    - HUB.4.0
+    - CashflowinKieve

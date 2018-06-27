@@ -10,13 +10,29 @@ services:
   radar:
     container_name: radar
     build: .
-    ports:
-      - 8888:8888
+    # ports:
+    #   - 8888:8888
     volumes:
       - home:/root
       - .:/root/radar
+    environment:
+      - GRID_HOST=selenium-hub
+      - GRID_PORT=4444
     stdin_open: true
     tty: true
+
+  selenium-hub:
+    image: selenium/hub:3.12.0-cobalt
+    container_name: selenium-hub
+    ports:
+      - 4444:4444
+  selenium-chrome-node:
+    image: selenium/node-chrome:3.12.0-cobalt
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
 
 volumes:
   # pgdata:

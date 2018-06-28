@@ -4,6 +4,9 @@ import java.io.File
 import java.net.URL
 import org.apache.commons.io.FileUtils
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.{ ChromeDriver, ChromeDriverService, ChromeOptions }
 import org.openqa.selenium.remote.{ RemoteWebDriver, DesiredCapabilities }
@@ -26,5 +29,13 @@ object Main {
       as <- att { ActorSystem("RadarActors")       }
       _  <- att { as actorOf Props[FacebookEvents] }
       _  <- att { as actorOf ChatBot.props(token)  }
+
+      // Shutdown hook
+      _  <- att { scala.sys.addShutdownHook {
+              println("Termination started")
+              as.terminate()
+              Await.result(as.whenTerminated, Duration.Inf)
+              println("Terminated")
+            } }
     } yield () }
 }

@@ -24,7 +24,7 @@ package object radar {
   def run[A](ef: Ef[A]): A = ef.value.unsafeRunSync match {
     case Right(a) => a
     case Left (e) =>
-      System.err.println(s"The following errors happened:\n${e.toList.mkString("\n")}")
+      println(s"The following errors happened:\n${e.toList.mkString("\n")}")
       throw new RuntimeException("Ef execution error")
   }
 }

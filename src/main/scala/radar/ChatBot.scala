@@ -29,6 +29,7 @@ object ChatBot {
   * Let me Google that for you!
   */
 class ChatBot(val token: String) extends Actor
+                                    with ActorLogging
                                     with TelegramBot
                                     with Polling
                                     with InlineQueries
@@ -37,6 +38,7 @@ class ChatBot(val token: String) extends Actor
   var recipient: Option[Int] = None
 
   override def preStart(): Unit = {
+    log.info("ChatBot started")
     context.system.scheduler.schedule(Zero, 15 seconds, self, Update)
     this.run()
   }
@@ -60,6 +62,7 @@ class ChatBot(val token: String) extends Actor
            |Your user entity is $user.
            |Will now feed you with the info you requested.
         """.stripMargin)}
+      _    <- att { log.info(const.log.registeredRecipient(recipient.toString)) }
     } yield () }
   }
 
@@ -68,6 +71,7 @@ class ChatBot(val token: String) extends Actor
       recipient = Some(id)
     
     case Update if recipient.isDefined =>
+      log.info(const.log.notifying(recipient.toString))
       runR { for {
         evts <- ioe { db.fbevents.listNew }
         _    <- evts.traverse(sendEvt)

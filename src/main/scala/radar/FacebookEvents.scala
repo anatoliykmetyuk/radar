@@ -21,14 +21,16 @@ case object Update
 class FacebookEvents extends Actor with ActorLogging {
   val target = "https://www.facebook.com/pg/HUB.4.0/events/"
 
-  val driver: RemoteWebDriver =
+  lazy val driver: RemoteWebDriver =
     run { for {
       gridHost <- opt { Option(System.getenv("GRID_HOST")) }
       gridPort <- opt { Option(System.getenv("GRID_PORT")).map(_.toInt) }
       gridUrl   = new URL("http", gridHost, gridPort, "/wd/hub")
-    } yield new RemoteWebDriver(gridUrl, new ChromeOptions()) }
+      res      <- att { new RemoteWebDriver(gridUrl, new ChromeOptions()) }
+    } yield res }
 
   override def preStart(): Unit = {
+    log.info("FacebookEvents started")
     context.system.scheduler.schedule(Zero, 15 seconds, self, Update)
   }
 
@@ -39,7 +41,6 @@ class FacebookEvents extends Actor with ActorLogging {
   override def receive = {
     case Update =>
       log.info(const.log.scrapingTarget(target))
-      
       driver.get(target)
       val events: List[FacebookEvent] = driver
         .findElements(By.xpath("""//*[@id="upcoming_events_card"]/div/div[@class="_24er"]""")).asScala
@@ -65,7 +66,7 @@ case class FacebookEvent(
   , notified: Boolean = false)
 {
   override def toString() =
-    s"$month $date\t$name\t${link.take(25)}...\t$details"
+    s"$month $date\t$name\t$link\t$details"
 
   override def equals(that: Any): Boolean = that match {
     case FacebookEvent(_, month, date, name, _, _, _, _) =>

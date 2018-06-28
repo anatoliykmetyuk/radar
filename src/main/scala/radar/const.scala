@@ -7,6 +7,12 @@ object const {
 
     def dbWrite(db: String, strRepr: String): String =
       s"The following content written to the $db database:\n$strRepr"
+
+    def notifying(recipient: String) =
+      s"Notifying $recipient now"
+
+    def registeredRecipient(recipient: String) =
+      s"Registered recipient: $recipient"
   }
 
   object err {

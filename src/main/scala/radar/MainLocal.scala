@@ -45,7 +45,7 @@ object MainLocal {
 
     val events: List[FacebookEvent] = driver
       .findElements(By.xpath("""//*[@id="upcoming_events_card"]/div/div[@class="_24er"]""")).asScala
-      .map(FacebookEvent).toList
+      .map(FacebookEvent(_, "HUB.4.0")).toList
 
     println(events.mkString("\n"))
 

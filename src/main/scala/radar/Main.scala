@@ -18,6 +18,10 @@ import io.circe.yaml.parser
 
 object Main {
 
+  val targets = List(
+    "HUB.4.0"
+  , "CashflowinKieve")
+
   def main(args: Array[String]): Unit =
     run { for {
       // Read the telegram token from the configuration
@@ -27,7 +31,7 @@ object Main {
 
       // Bootstrap actors
       as <- att { ActorSystem("RadarActors")       }
-      _  <- att { as actorOf Props[FacebookEvents] }
+      _  <- targets.traverse { t => att { as actorOf FacebookEvents.props(t) } }
       _  <- att { as actorOf ChatBot.props(token)  }
 
       // Shutdown hook

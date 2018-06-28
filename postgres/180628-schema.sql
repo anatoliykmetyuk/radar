@@ -5,6 +5,7 @@ CREATE TABLE public.fbevents (
 , name     varchar   NOT NULL
 , link     varchar   NOT NULL
 , details  varchar   NOT NULL
+, source   varchar   NOT NULL
 , created  timestamp NOT NULL
 , notified boolean   NOT NULL
 

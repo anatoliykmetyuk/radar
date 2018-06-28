@@ -16,6 +16,7 @@ object fbevents extends FbEventsDbHelpers {
       , name
       , link
       , details
+      , source
       , created
       , notified)
       values (
@@ -24,6 +25,7 @@ object fbevents extends FbEventsDbHelpers {
       , $name
       , $link
       , $details
+      , $source
       , to_timestamp($created / 1000)
       , $notified)
       """
@@ -63,6 +65,7 @@ trait FbEventsDbHelpers {
       , name
       , link
       , details
+      , source
       , extract(epoch from created) * 1000
       , notified
       from fbevents"""

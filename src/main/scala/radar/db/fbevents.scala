@@ -16,23 +16,36 @@ object fbevents extends FbEventsDbHelpers {
       , name
       , link
       , details
-      , created)
+      , created
+      , notified)
       values (
         $month
       , $date
       , $name
       , $link
       , $details
-      , to_timestamp($created / 1000))
+      , to_timestamp($created / 1000)
+      , $notified)
       """
       .update.withUniqueGeneratedKeys[Int]("id").transact(tr)
   }
+
+  def markNotified(id: Int): IO[Int] =
+    sql"""
+      update fbevents set notified = true
+      where id = $id
+    """.update.run.transact(tr)
+
 
   def list: IO[List[FacebookEvent]] =
     selectSql.query[FacebookEvent].to[List].transact(tr)
 
   def listLatest(lim: Int): IO[List[FacebookEvent]] =
     (selectSql ++ sql"order by id desc limit $lim")
+      .query[FacebookEvent].to[List].transact(tr)
+
+  def listNew: IO[List[FacebookEvent]] =
+    (selectSql ++ sql"where notified = false")
       .query[FacebookEvent].to[List].transact(tr)
 
   def get(id: Int): IO[FacebookEvent] =
@@ -51,5 +64,6 @@ trait FbEventsDbHelpers {
       , link
       , details
       , extract(epoch from created) * 1000
+      , notified
       from fbevents"""
 }

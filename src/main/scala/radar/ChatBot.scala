@@ -2,108 +2,75 @@ package radar
 
 import org.apache.commons.io.FileUtils
 
+import scala.concurrent.duration._, Duration.Zero
+
+import akka.actor._
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
-import info.mukel.telegrambot4s.Implicits._
+
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.api.declarative.{Commands, InlineQueries}
-import info.mukel.telegrambot4s.methods.ParseMode
 import info.mukel.telegrambot4s.models._
+import info.mukel.telegrambot4s.methods._
 
 import io.circe.yaml
+import cats._, cats.implicits._, cats.effect._, cats.data.{ NonEmptyList => NEL, _ }
 
+import radar.{ run => runR }
+
+
+case class SetRecipient(to: Int)
 
 object ChatBot {
-  def main(args: Array[String]): Unit = {
-    run { for {
-      config  <- att { FileUtils.readFileToString(new java.io.File("radar.yml"), settings.enc) }
-      cfgJson <- exn { yaml.parser.parse(config) }
-      token   <- exn { cfgJson.hcursor.get[String]("telegram-token") }
-      bot      = new ChatBot(token)
-      _       <- att { bot.run() }
-    } yield () }
-  }
+  def props(token: String) = Props(classOf[ChatBot], token)
 }
 
 /**
   * Let me Google that for you!
   */
-class ChatBot(val token: String) extends TelegramBot
-  with Polling
-  with InlineQueries
-  with Commands {
+class ChatBot(val token: String) extends Actor
+                                    with TelegramBot
+                                    with Polling
+                                    with InlineQueries
+                                    with Commands {
 
-  def lmgtfyBtn(query: String): InlineKeyboardMarkup = InlineKeyboardMarkup.singleButton(
-    InlineKeyboardButton.url("\uD83C\uDDECoogle it now!", lmgtfyUrl(query)))
+  var recipient: Option[Int] = None
 
-  onCommand('start, 'help) { implicit msg =>
-    reply(
-      s"""Generates ${"Let me \uD83C\uDDECoogle that for you!".italic} links.
-         |
-         |/start | /help - list commands
-         |
-         |/lmgtfy args - generate link
-         |
-         |/lmgtfy2 | /btn args - clickable button
-         |
-         |@Bot args - Inline mode
-      """.stripMargin,
-      parseMode = ParseMode.Markdown)
+  override def preStart(): Unit = {
+    context.system.scheduler.schedule(Zero, 15 seconds, self, Update)
+    this.run()
   }
 
-  onCommand('lmgtfy) { implicit msg =>
-    withArgs { args =>
-      val query = args.mkString(" ")
+  def sendEvt(e: FacebookEvent): Ef[Unit] =
+    for {
+      to  <- opt { recipient }
+      eId <- opt { e.id }
+      _   <- att { request(SendMessage(to, e.toString)) }
+      _   <- ioe { db.fbevents.markNotified(eId) }
+    } yield ()
 
-      reply(
-        query.altWithUrl(lmgtfyUrl(query)),
-        disableWebPagePreview = true,
-        parseMode = ParseMode.Markdown
-      )
-    }
+
+  onCommand('start) { implicit msg =>
+    runR { for {
+      user <- opt { msg.from }
+      id    = user.id
+      _    <- att { self ! SetRecipient(id) }
+      _    <- att { reply(
+        s"""Registered your id! Your id is $id.
+           |Your user entity is $user.
+           |Will now feed you with the info you requested.
+        """.stripMargin)}
+    } yield () }
   }
 
-  def lmgtfyUrl(query: String): String =
-    Uri("http://lmgtfy.com")
-      .withQuery(Query("q" -> query))
-      .toString()
-
-  onCommand('btn, 'lmgtfy2) { implicit msg =>
-    withArgs { args =>
-      val query = args.mkString(" ")
-      reply(query, replyMarkup = lmgtfyBtn(query))
-    }
-  }
-
-  onInlineQuery { implicit iq =>
-    val query = iq.query
-
-    if (query.isEmpty)
-      answerInlineQuery(Seq())
-    else {
-
-      val textMessage = InputTextMessageContent(
-        query.altWithUrl(lmgtfyUrl(query)),
-        disableWebPagePreview = true,
-        parseMode = ParseMode.Markdown)
-
-      val results = List(
-        InlineQueryResultArticle(
-          "btn:" + query,
-          inputMessageContent = textMessage,
-          title = iq.query,
-          description = "Clickable button + link",
-          replyMarkup = lmgtfyBtn(query)
-        ),
-        InlineQueryResultArticle(
-          query,
-          inputMessageContent = textMessage,
-          description = "Clickable link",
-          title = iq.query
-        )
-      )
-
-      answerInlineQuery(results, cacheTime = 1)
-    }
+  override def receive = {
+    case SetRecipient(id) =>
+      recipient = Some(id)
+    
+    case Update if recipient.isDefined =>
+      runR { for {
+        evts <- ioe { db.fbevents.listNew }
+        _    <- evts.traverse(sendEvt)
+      } yield () }
   }
 }

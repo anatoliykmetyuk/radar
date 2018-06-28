@@ -55,19 +55,20 @@ class FacebookEvents extends Actor with ActorLogging {
 }
 
 case class FacebookEvent(
-    id     : Option[Int] = None
-  , month  : String
-  , date   : String
-  , name   : String
-  , link   : String
-  , details: String
-  , created: Long = time.now)
+    id      : Option[Int] = None
+  , month   : String
+  , date    : String
+  , name    : String
+  , link    : String
+  , details : String
+  , created : Long    = time.now
+  , notified: Boolean = false)
 {
   override def toString() =
     s"$month $date\t$name\t${link.take(25)}...\t$details"
 
   override def equals(that: Any): Boolean = that match {
-    case FacebookEvent(_, month, date, name, _, _, _) =>
+    case FacebookEvent(_, month, date, name, _, _, _, _) =>
       this.month == month && this.date == date && this.name == name
     case _ => false
   }

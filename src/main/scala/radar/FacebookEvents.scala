@@ -45,12 +45,12 @@ class FacebookEvents extends Actor with ActorLogging {
         .findElements(By.xpath("""//*[@id="upcoming_events_card"]/div/div[@class="_24er"]""")).asScala
         .map(FacebookEvent).toList
 
-      for {
+      run { for {
         latest   <- ioe { db.fbevents.listLatest(10) }.map(_.toSet)
         newEvents = events.filter(!latest(_))
         _        <- ioe { newEvents.traverse(db.fbevents.create) } // TODO batch create
         _         = log.info(const.log.dbWrite("fbevents", newEvents.mkString("\n")))
-      } yield ()
+      } yield () }
   }
 }
 

@@ -12,11 +12,11 @@ object fbevents extends FbEventsDbHelpers {
     sql"""
       insert into fbevents(
         month
-      , date
+      , "date"
       , name
       , link
       , details
-      , created
+      , created)
       values (
         $month
       , $date
@@ -32,7 +32,7 @@ object fbevents extends FbEventsDbHelpers {
     selectSql.query[FacebookEvent].to[List].transact(tr)
 
   def listLatest(lim: Int): IO[List[FacebookEvent]] =
-    (selectSql ++ sql"limit $lim order by id desc")
+    (selectSql ++ sql"order by id desc limit $lim")
       .query[FacebookEvent].to[List].transact(tr)
 
   def get(id: Int): IO[FacebookEvent] =
@@ -42,11 +42,11 @@ object fbevents extends FbEventsDbHelpers {
 
 trait FbEventsDbHelpers {
   val selectSql =
-    sql"""
+    fr"""
       select
         id
       , month
-      , date
+      , "date"
       , name
       , link
       , details

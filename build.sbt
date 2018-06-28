@@ -5,15 +5,16 @@ val Cats          = "1.1.0"
 val CatsEffect    = "0.10.1"
 val KindProjector = "0.9.7"
 val Shapeless     = "2.3.3"
-val Akka          = "2.5.13"
+val Akka          = "2.4.19"
 
 // Specialized
-val FS2       = "0.10.5"
-val Doobie    = "0.6.0-M1"
-val Circe     = "0.9.3"
-val CirceYaml = "0.8.0"
-val Http4s    = "0.18.13"
-val Sttp      = "1.2.1"
+val FS2        = "0.10.5"
+val Doobie     = "0.6.0-M1"
+val Circe      = "0.9.3"
+val CirceYaml  = "0.8.0"
+val Http4s     = "0.18.13"
+val Sttp       = "1.2.1"
+val Telegram4s = "3.0.15"
 
 // Tests
 val ScalaTest  = "3.0.5"
@@ -40,20 +41,21 @@ lazy val commonSettings = Seq(
   , "com.typesafe.akka" %% "akka-slf4j"  % Akka
 
     // Specialized
-  , "co.fs2"       %% "fs2-core"            % FS2
-  , "co.fs2"       %% "fs2-io"              % FS2
-  , "org.tpolecat" %% "doobie-core"         % Doobie
-  , "org.tpolecat" %% "doobie-postgres"     % Doobie
-  , "io.circe"     %% "circe-core"          % Circe
-  , "io.circe"     %% "circe-generic"       % Circe
-  , "io.circe"     %% "circe-parser"        % Circe
-  , "io.circe"     %% "circe-yaml"          % CirceYaml
-  , "org.http4s"   %% "http4s-dsl"          % Http4s
-  , "org.http4s"   %% "http4s-circe"        % Http4s
-  , "org.http4s"   %% "http4s-blaze-server" % Http4s
-  , "org.http4s"   %% "http4s-blaze-client" % Http4s
-  , "com.softwaremill.sttp" %% "core"  % Sttp
-  , "com.softwaremill.sttp" %% "circe" % Sttp
+  , "co.fs2"                %% "fs2-core"            % FS2
+  , "co.fs2"                %% "fs2-io"              % FS2
+  , "org.tpolecat"          %% "doobie-core"         % Doobie
+  , "org.tpolecat"          %% "doobie-postgres"     % Doobie
+  , "io.circe"              %% "circe-core"          % Circe
+  , "io.circe"              %% "circe-generic"       % Circe
+  , "io.circe"              %% "circe-parser"        % Circe
+  , "io.circe"              %% "circe-yaml"          % CirceYaml
+  , "org.http4s"            %% "http4s-dsl"          % Http4s
+  , "org.http4s"            %% "http4s-circe"        % Http4s
+  , "org.http4s"            %% "http4s-blaze-server" % Http4s
+  , "org.http4s"            %% "http4s-blaze-client" % Http4s
+  , "com.softwaremill.sttp" %% "core"                % Sttp
+  , "com.softwaremill.sttp" %% "circe"               % Sttp
+  , "info.mukel"            %% "telegrambot4s"       % Telegram4s
 
     // Test
   , "org.scalatest"  %% "scalatest"  % ScalaTest  % "test"

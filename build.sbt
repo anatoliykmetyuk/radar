@@ -76,6 +76,7 @@ lazy val commonSettings = Seq(
     , "-language:higherKinds"
     , "-language:implicitConversions"
     , "-language:experimental.macros"
+    , "-language:postfixOps"
     , "-unchecked"
     // , "-Xfatal-warnings"
     // , "-Xlint"

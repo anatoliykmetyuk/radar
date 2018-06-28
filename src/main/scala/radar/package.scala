@@ -8,4 +8,9 @@ package object radar {
 
   def exn[A, E <: Throwable](e: Either[E, A]): Ef[A] =
     e.leftMap(_.getMessage)
+
+  def run[A](ef: Ef[A]): A = ef match {
+    case Right(a) => a
+    case Left (e) => throw new RuntimeException(e)
+  }
 }

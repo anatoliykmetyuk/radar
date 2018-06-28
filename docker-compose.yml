@@ -1,12 +1,12 @@
 version: '3'
 services:
-  # postgres:
-  #   container_name: radar_db
-  #   build: postgres
-  #   ports:
-  #     - 5432:5432
-  #   # volumes:
-  #   #   - pgdata:/var/lib/postgresql/data
+  radar_db:
+    container_name: radar_db
+    build: postgres
+    ports:
+      - 5432:5432
+    # volumes:
+    #   - pgdata:/var/lib/postgresql/data
   radar:
     container_name: radar
     build: .

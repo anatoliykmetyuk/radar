@@ -1,16 +1,26 @@
-import cats._, cats.implicits._
+import cats._, cats.implicits._, cats.effect._, cats.data.{ NonEmptyList => NEL, _ }
 
 package object radar {
-  type Ef[A] = Either[String, A]
+  type Ef[A] = EitherT[IO, NEL[String], A]
 
-  def opt[A](o: Option[A], msg: String = const.err.emptyOption): Ef[A] =
-    o.map(x => Right[String, A](x)).getOrElse(Left[String, A](msg))
+  /** IO Effect */
+  def ioe[A](x: IO[A]): Ef[A] = EitherT[IO, NEL[String], A](x.map(Right(_)))
 
+  /** Option */
+  def opt[A](o: Option[A], msg: String = const.err.emptyOption): Ef[A] = o
+    .map { x =>
+      EitherT(IO[Either[NEL[String], A]] { Right[NEL[String], A]( x             ) }) }.getOrElse {
+      EitherT(IO[Either[NEL[String], A]] { Left [NEL[String], A]( NEL(msg, Nil) ) }) }
+
+  /** Exception under Either */
   def exn[A, E <: Throwable](e: Either[E, A]): Ef[A] =
-    e.leftMap(_.getMessage)
+    EitherT(IO[Either[NEL[String], A]] { e.leftMap(x => NEL(x.getMessage, Nil)) })
 
-  def run[A](ef: Ef[A]): A = ef match {
+  /** Extract A out of Ef[A], run all side effects */
+  def run[A](ef: Ef[A]): A = ef.value.unsafeRunSync match {
     case Right(a) => a
-    case Left (e) => throw new RuntimeException(e)
+    case Left (e) =>
+      System.err.println(s"The following errors happened:\n${e.toList.mkString("\n")}")
+      throw new RuntimeException("Ef execution error")
   }
 }

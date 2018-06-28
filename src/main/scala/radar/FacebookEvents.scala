@@ -15,7 +15,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import akka.actor._
 import cats._, cats.implicits._
-import io.circe.yaml.parser
 
 case object Update
 
@@ -45,18 +44,36 @@ class FacebookEvents extends Actor with ActorLogging {
       val events: List[FacebookEvent] = driver
         .findElements(By.xpath("""//*[@id="upcoming_events_card"]/div/div[@class="_24er"]""")).asScala
         .map(FacebookEvent).toList
-      println(events.mkString("\n"))
+
+      for {
+        latest   <- ioe { db.fbevents.listLatest(10) }.map(_.toSet)
+        newEvents = events.filter(!latest(_))
+        _        <- ioe { newEvents.traverse(db.fbevents.create) } // TODO batch create
+        _         = log.info(const.log.dbWrite("fbevents", newEvents.mkString("\n")))
+      } yield ()
   }
 }
 
 case class FacebookEvent(
-    month  : String
+    id     : Option[Int] = None
+  , month  : String
   , date   : String
   , name   : String
   , link   : String
-  , details: String) {
+  , details: String
+  , created: Long = time.now)
+{
   override def toString() =
     s"$month $date\t$name\t${link.take(25)}...\t$details"
+
+  override def equals(that: Any): Boolean = that match {
+    case FacebookEvent(_, month, date, name, _, _, _) =>
+      this.month == month && this.date == date && this.name == name
+    case _ => false
+  }
+
+  override def hashCode(): Int =
+    month.hashCode + date.hashCode + name.hashCode
 }
 
 object FacebookEvent extends Function1[WebElement, FacebookEvent] {
@@ -71,6 +88,11 @@ object FacebookEvent extends Function1[WebElement, FacebookEvent] {
     val link = nameLinkElem.getAttribute("href")
     val details = xp("table/tbody/tr/td[2]/div/div[2]").getText
 
-    FacebookEvent(month, date, name, link, details)
+    FacebookEvent(
+      month   = month
+    , date    = date
+    , name    = name
+    , link    = link
+    , details = details)
   }
 }

@@ -19,8 +19,16 @@ import io.circe.yaml.parser
 object Main {
 
   val targets = List(
-    "HUB.4.0"
-  , "CashflowinKieve")
+    "ChasopysEduSpace"
+  // , "mimkyiv"
+  // , "ucci.org.ua"
+  , "HUB.4.0"
+  // , "startaaccelerator"
+  // , "kievfprog"
+  // , "algoclub"
+  // , "newitkpi"
+  // , "ProstirChasopys"
+  , "data.science.ua")
 
   def main(args: Array[String]): Unit =
     run { for {

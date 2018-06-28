@@ -18,7 +18,7 @@ services:
     environment:
       - GRID_HOST=selenium-hub
       - GRID_PORT=4444
-      - GRID_MAX_SESSION=4
+      - GRID_MAX_SESSION=10
     stdin_open: true
     tty: true
 
@@ -34,8 +34,8 @@ services:
     environment:
       - HUB_HOST=selenium-hub
       - HUB_PORT=4444
-      - NODE_MAX_INSTANCES=4
-      - NODE_MAX_SESSION=4
+      - NODE_MAX_INSTANCES=10
+      - NODE_MAX_SESSION=10
 
 volumes:
   # pgdata:

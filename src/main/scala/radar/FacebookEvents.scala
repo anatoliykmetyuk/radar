@@ -30,7 +30,7 @@ class FacebookEvents(page: String) extends Actor with ActorLogging {
       gridHost <- opt { Option(System.getenv("GRID_HOST")) }
       gridPort <- opt { Option(System.getenv("GRID_PORT")).map(_.toInt) }
       gridUrl   = new URL("http", gridHost, gridPort, "/wd/hub")
-      res      <- att { new RemoteWebDriver(gridUrl, new ChromeOptions()) }
+      res      <- att { new RemoteWebDriver(gridUrl, new ChromeOptions().setHeadless(true)) }
     } yield res }
 
   override def preStart(): Unit = {

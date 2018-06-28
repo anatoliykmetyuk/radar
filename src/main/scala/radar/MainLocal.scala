@@ -42,6 +42,7 @@ object MainLocal {
     , new ChromeOptions())
 
     driver.get("https://www.facebook.com/pg/HUB.4.0/events/")
+    println(driver.getWindowHandles().asScala)
 
     val events: List[FacebookEvent] = driver
       .findElements(By.xpath("""//*[@id="upcoming_events_card"]/div/div[@class="_24er"]""")).asScala

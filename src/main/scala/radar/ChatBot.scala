@@ -1,5 +1,7 @@
 package radar
 
+import org.apache.commons.io.FileUtils
+
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
 import info.mukel.telegrambot4s.Implicits._
@@ -8,9 +10,18 @@ import info.mukel.telegrambot4s.api.declarative.{Commands, InlineQueries}
 import info.mukel.telegrambot4s.methods.ParseMode
 import info.mukel.telegrambot4s.models._
 
+import io.circe.yaml
+
+
 object ChatBot {
   def main(args: Array[String]): Unit = {
-    new ChatBot("588052981:AAEkUNfT5HoYONgXP2UauSz-7aiqDYy66Ww").run()
+    run { for {
+      config  <- att { FileUtils.readFileToString(new java.io.File("radar.yml"), settings.enc) }
+      cfgJson <- exn { yaml.parser.parse(config) }
+      token   <- exn { cfgJson.hcursor.get[String]("telegram-token") }
+      bot      = new ChatBot(token)
+      _       <- att { bot.run() }
+    } yield () }
   }
 }
 

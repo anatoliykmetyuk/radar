@@ -1,3 +1,4 @@
+import scala.util.Try
 import cats._, cats.implicits._, cats.effect._, cats.data.{ NonEmptyList => NEL, _ }
 
 package object radar {
@@ -15,6 +16,9 @@ package object radar {
   /** Exception under Either */
   def exn[A, E <: Throwable](e: Either[E, A]): Ef[A] =
     EitherT(IO[Either[NEL[String], A]] { e.leftMap(x => NEL(x.getMessage, Nil)) })
+
+  /** Attempt to run an error-prone computation */
+  def att[A](a: => A): Ef[A] = exn { Try(a).toEither }
 
   /** Extract A out of Ef[A], run all side effects */
   def run[A](ef: Ef[A]): A = ef.value.unsafeRunSync match {

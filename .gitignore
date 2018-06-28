@@ -21,9 +21,10 @@ project/plugins/project/
 # Ensime
 /.ensime*
 
+# Mac
+.DS_Store/
+
 # Project-specific data
 /data/
 /assets
-
-# Mac
-.DS_Store/
+/radar.yml

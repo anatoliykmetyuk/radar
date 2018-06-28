@@ -4,7 +4,9 @@ import java.io.File
 import java.net.URL
 import org.apache.commons.io.FileUtils
 
-import org.openqa.selenium.WebDriver
+import scala.collection.JavaConverters._
+
+import org.openqa.selenium.{ WebDriver, WebElement, By }
 import org.openqa.selenium.chrome.{ ChromeDriver, ChromeDriverService, ChromeOptions }
 import org.openqa.selenium.remote.{ RemoteWebDriver, DesiredCapabilities }
 
@@ -35,18 +37,20 @@ object MainLocal {
   def main(args: Array[String]): Unit = {
     val (gridUrl, cleanup) = getServiceUrl()
     println(s"Grid URL is: $gridUrl")
-
     val driver = new RemoteWebDriver(
       gridUrl
     , new ChromeOptions())
 
     driver.get("https://www.facebook.com/pg/HUB.4.0/events/")
 
-    val events = driver.findElementById("upcoming_events_card")
-    println(events.getAttribute("outerHTML"))
+    val events: List[FacebookEvent] = driver
+      .findElements(By.xpath("""//*[@id="upcoming_events_card"]/div/div[@class="_24er"]""")).asScala
+      .map(FacebookEvent).toList
 
-    driver.quit()
-    cleanup()
+    println(events.mkString("\n"))
+
+    // driver.quit()
+    // cleanup()
     // FileUtils.writeStringToFile(new File("res.html"), doc.toHtml)
   }
 }

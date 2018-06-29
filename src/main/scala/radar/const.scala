@@ -13,6 +13,18 @@ object const {
 
     def registeredRecipient(recipient: String) =
       s"Registered recipient: $recipient"
+
+    def fbEventsStarted(page: String) =
+      s"FacebookEvents started for target $page"
+
+    def driverManagerStarted(name: String) =
+      s"DriverManager started: $name"
+    
+    def driverWorkerStarted(name: String) =
+      s"DriverWorker started: $name"
+
+    def receivedEvents(evts: String) =
+      s"Received the following events from DriverWorker:\n$evts"
   }
 
   object err {

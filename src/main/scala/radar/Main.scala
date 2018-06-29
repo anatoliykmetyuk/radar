@@ -38,8 +38,9 @@ object Main {
       token   <- exn { cfgJson.hcursor.get[String]("telegram-token") }
 
       // Bootstrap actors
-      as <- att { ActorSystem("RadarActors")       }
-      _  <- targets.traverse { t => att { as actorOf FacebookEvents.props(t) } }
+      as <- att { ActorSystem("RadarActors") }
+      dm <- att { as actorOf DriverManager.props(1) }
+      _  <- targets.traverse { t => att { as actorOf FacebookEvents.props(t, dm) } }
       _  <- att { as actorOf ChatBot.props(token)  }
 
       // Shutdown hook

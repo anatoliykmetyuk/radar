@@ -19,37 +19,31 @@ import cats._, cats.implicits._
 case object Update
 
 object FacebookEvents {
-  def props(page: String) = Props(classOf[FacebookEvents], page)
+  def props(page: String, driverManager: ActorRef) =
+    Props(classOf[FacebookEvents], page, driverManager)
 }
 
-class FacebookEvents(page: String) extends Actor with ActorLogging {
+class FacebookEvents(page: String, driverManager: ActorRef) extends Actor with ActorLogging {
   val target = s"https://www.facebook.com/pg/$page/events/"
 
-  lazy val driver: RemoteWebDriver =
-    run { for {
-      gridHost <- opt { Option(System.getenv("GRID_HOST")) }
-      gridPort <- opt { Option(System.getenv("GRID_PORT")).map(_.toInt) }
-      gridUrl   = new URL("http", gridHost, gridPort, "/wd/hub")
-      res      <- att { new RemoteWebDriver(gridUrl, new ChromeOptions().setHeadless(true)) }
-    } yield res }
-
   override def preStart(): Unit = {
-    log.info(s"FacebookEvents started for target $page")
+    log.info(const.log.fbEventsStarted(page))
     context.system.scheduler.schedule(Zero, 15 seconds, self, Update)
-  }
-
-  override def postStop(): Unit = {
-    driver.quit()
   }
 
   override def receive = {
     case Update =>
       log.info(const.log.scrapingTarget(target))
-      driver.get(target)
-      val events: List[FacebookEvent] = driver
-        .findElements(By.xpath("""//*[@id="upcoming_events_card"]/div/div[@class="_24er"]""")).asScala
-        .map(FacebookEvent(_, page)).toList
+      val code: RemoteWebDriver => List[FacebookEvent] = { driver =>
+        driver.get(target)
+        driver
+          .findElements(By.xpath("""//*[@id="upcoming_events_card"]/div/div[@class="_24er"]""")).asScala
+          .map(FacebookEvent(_, page)).toList
+      }
+      driverManager ! Execute(code)
 
+    case Result(events: List[FacebookEvent]) =>
+      log.info(const.log.receivedEvents(events.mkString("\n")))
       run { for {
         latest   <- ioe { db.fbevents.listLatest(10) }.map(_.toSet)
         newEvents = events.filter(!latest(_))

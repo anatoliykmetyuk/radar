@@ -23,8 +23,8 @@ object const {
     def driverWorkerStarted(name: String) =
       s"DriverWorker started: $name"
 
-    def receivedEvents(evts: String) =
-      s"Received the following events from DriverWorker:\n$evts"
+    def receivedEvents(evts: String, from: String) =
+      s"Received $evts events from $from"
   }
 
   object err {

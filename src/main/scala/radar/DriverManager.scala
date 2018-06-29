@@ -33,12 +33,12 @@ class DriverManager(workersNum: Int) extends Actor with ActorLogging {
 
   override def preStart(): Unit = {
     log.info(const.log.driverManagerStarted(self.toString))
-    workers = (1 to workersNum).map(_ => context actorOf DriverWorker.props).toList
+    workers = (1 to workersNum).map(i => context.actorOf(DriverWorker.props, s"DriverWorker-$i")).toList
   }
 
   override def receive = {
     case e @ Execute(_) =>
-      workers(currentWorker) forward e
+      workers(currentWorker) forward e  // TODO prioritize workers by their current load
       incrementCurrentWorker()
   }
 }

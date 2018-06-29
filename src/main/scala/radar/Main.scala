@@ -18,16 +18,16 @@ import io.circe.yaml.parser
 
 object Main {
 
-  val targets = List(
+  val targets = List( // TODO configure targets via chat bot
     "ChasopysEduSpace"
-  // , "mimkyiv"
-  // , "ucci.org.ua"
+  , "mimkyiv"
+  , "ucci.org.ua"
   , "HUB.4.0"
-  // , "startaaccelerator"
-  // , "kievfprog"
-  // , "algoclub"
-  // , "newitkpi"
-  // , "ProstirChasopys"
+  , "startaaccelerator"
+  , "kievfprog"
+  , "algoclub"
+  , "newitkpi"
+  , "ProstirChasopys"
   , "data.science.ua")
 
   def main(args: Array[String]): Unit =
@@ -39,9 +39,9 @@ object Main {
 
       // Bootstrap actors
       as <- att { ActorSystem("RadarActors") }
-      dm <- att { as actorOf DriverManager.props(1) }
-      _  <- targets.traverse { t => att { as actorOf FacebookEvents.props(t, dm) } }
-      _  <- att { as actorOf ChatBot.props(token)  }
+      dm <- att { as.actorOf(DriverManager.props(1), "DriverManager") }  // TODO Make use of more workers
+      _  <- targets.traverse { t => att { as.actorOf(FacebookEvents.props(t, dm), s"FBEvents-$t") } }
+      _  <- att { as.actorOf(ChatBot.props(token), "ChatBot")  }
 
       // Shutdown hook
       _  <- att { scala.sys.addShutdownHook {

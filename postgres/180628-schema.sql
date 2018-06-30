@@ -19,6 +19,20 @@ CREATE UNIQUE INDEX message_link_idx ON message USING btree (link) ;
 
 -- Drop table
 
+-- DROP TABLE public.subscriber
+
+CREATE TABLE subscriber (
+  id serial NOT NULL,
+  telegram_id int4 NOT NULL,
+  CONSTRAINT subscriber_pk PRIMARY KEY (id),
+  CONSTRAINT subscriber_un UNIQUE (telegram_id)
+)
+WITH (
+  OIDS=FALSE
+) ;
+
+-- Drop table
+
 -- DROP TABLE public.notified
 
 CREATE TABLE notified (
@@ -30,20 +44,6 @@ CREATE TABLE notified (
   CONSTRAINT notified_un UNIQUE (subscriber, message),
   CONSTRAINT notified_message_fk FOREIGN KEY (message) REFERENCES message(id) ON DELETE CASCADE,
   CONSTRAINT notified_subscriber_fk FOREIGN KEY (subscriber) REFERENCES subscriber(id) ON DELETE CASCADE
-)
-WITH (
-  OIDS=FALSE
-) ;
-
--- Drop table
-
--- DROP TABLE public.subscriber
-
-CREATE TABLE subscriber (
-  id serial NOT NULL,
-  telegram_id int4 NOT NULL,
-  CONSTRAINT subscriber_pk PRIMARY KEY (id),
-  CONSTRAINT subscriber_un UNIQUE (telegram_id)
 )
 WITH (
   OIDS=FALSE

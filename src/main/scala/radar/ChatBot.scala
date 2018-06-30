@@ -70,14 +70,12 @@ class ChatBot(val token: String) extends Actor
   // def lmgtfyBtn(query: String): InlineKeyboardMarkup = InlineKeyboardMarkup.singleButton(
   //   InlineKeyboardButton.url("\uD83C\uDDECoogle it now!", lmgtfyUrl(query)))
 
-  val tag = prefixTag("HI") _
-
   def btn(): InlineKeyboardMarkup = InlineKeyboardMarkup.singleButton(
     InlineKeyboardButton.callbackData(
-      s"Press Me", tag("payload")))
+      s"Press Me", (0 to 63).map(_ => '0').mkString))
 
-  onCallbackWithTag("HI") { implicit cbq =>
-    println(s"Callback query received: $cbq")
+  onCallbackQuery { implicit cbq =>
+    println(s"Callback query received from ${cbq.from.id}: ${cbq.data}")
     request(SendMessage(cbq.from.id, "Responce to CBQ", replyMarkup = Some(btn())))
   }
 

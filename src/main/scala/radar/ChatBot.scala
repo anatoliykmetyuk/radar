@@ -34,7 +34,8 @@ class ChatBot(val token: String) extends Actor
                                     with Polling
                                     with InlineQueries
                                     with Commands
-                                    with Callbacks {
+                                    with Callbacks
+                                    with RadarCommands {
 
   var recipient: Option[Int] = None
 
@@ -96,5 +97,38 @@ class ChatBot(val token: String) extends Actor
         evts <- ioe { db.fbevents.listNew }
         _    <- evts.traverse(sendEvt)
       } yield () }
+  }
+}
+
+trait CmdHandler[R] {
+  def handle(c: R): Ef[Unit]
+}
+
+object CmdHandler {
+  def apply[R](implicit rch: CmdHandler[R]) = rch
+
+  // TODO use Shapeless generics to derive RCH for a trait
+  // Convert trait to coproduct, do recursive implicit res for each member
+}
+
+sealed trait RadarCommand
+case object MainMenu      extends RadarCommand
+case object Channels      extends RadarCommand
+case object Subscriptions extends RadarCommand
+
+trait RadarCommands { this: TelegramBot with Commands =>
+  type CmdHandler = PartialFunction[RadarCommand, Ef[Unit]]
+
+  implicit def mainMenu(cbq: CallbackQuery): CmdHandler[MainMenu.type] =
+    { _ => ??? }
+
+  implicit def subscriptions(cbq: CallbackQuery): CmdHandler[Subscriptions.type] =
+    { _ => ???}
+
+  implicit def channels(cbq: CallbackQuery): CmdHandler[Channels.type] =
+    { _ => ???}
+
+  onCallbackQuery { implicit cbq =>
+    runR { CmdHandler[RadarCommand].handle(cbq.data.decode[RadarCommand]) }
   }
 }

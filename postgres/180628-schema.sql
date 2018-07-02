@@ -58,7 +58,7 @@ CREATE TABLE subscription (
   id serial NOT NULL,
   subscriber int4 NOT NULL,
   protocol varchar NOT NULL,
-  target varchar NOT NULL DEFAULT 'default'::character varying,
+  target varchar NULL,
   "notify" bool NOT NULL DEFAULT true,
   CONSTRAINT subscription_pk PRIMARY KEY (id),
   CONSTRAINT subscription_un UNIQUE (subscriber, protocol, target),

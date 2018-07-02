@@ -30,6 +30,7 @@ CREATE TABLE subscriber (
 WITH (
   OIDS=FALSE
 ) ;
+CREATE UNIQUE INDEX subscriber_telegram_id_idx ON subscriber USING btree (telegram_id) ;
 
 -- Drop table
 

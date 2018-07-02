@@ -10,10 +10,12 @@ import akka.http.scaladsl.model.Uri.Query
 
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.api.declarative.{Commands, InlineQueries, Callbacks}
-import info.mukel.telegrambot4s.models._
+import info.mukel.telegrambot4s.models.{ Message => TMessage, _ }
 import info.mukel.telegrambot4s.methods._
 
+import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 import io.circe.yaml
+
 import cats._, cats.implicits._, cats.effect._, cats.data.{ NonEmptyList => NEL, _ }
 
 import radar.{ run => runR }
@@ -34,10 +36,7 @@ class ChatBot(val token: String) extends Actor
                                     with Polling
                                     with InlineQueries
                                     with Commands
-                                    with Callbacks
-                                    with RadarCommands {
-
-  var recipient: Option[Int] = None
+                                    with Callbacks {
 
   override def preStart(): Unit = {
     log.info("ChatBot started")
@@ -45,90 +44,60 @@ class ChatBot(val token: String) extends Actor
     this.run()
   }
 
-  def sendEvt(e: FacebookEvent): Ef[Unit] =
-    for {
-      to  <- opt { recipient }
-      eId <- opt { e.id }
-      _   <- att { request(SendMessage(to, e.toString)) }
-      _   <- ioe { db.fbevents.markNotified(eId) }
-    } yield ()
-
-
-  // onCommand('start) { implicit msg =>
-  //   runR { for {
-  //     user <- opt { msg.from }
-  //     id    = user.id
-  //     _    <- att { self ! SetRecipient(id) }
-  //     _    <- att { reply(
-  //       s"""Registered your id! Your id is $id.
-  //          |Your user entity is $user.
-  //          |Will now feed you with the info you requested.
-  //       """.stripMargin)}
-  //     _    <- att { log.info(const.log.registeredRecipient(recipient.toString)) }
-  //   } yield () }
-  // }
-
-  // def lmgtfyBtn(query: String): InlineKeyboardMarkup = InlineKeyboardMarkup.singleButton(
-  //   InlineKeyboardButton.url("\uD83C\uDDECoogle it now!", lmgtfyUrl(query)))
-
-  def btn(): InlineKeyboardMarkup = InlineKeyboardMarkup.singleButton(
-    InlineKeyboardButton.callbackData(
-      s"Press Me", (0 to 63).map(_ => '0').mkString))
-
   onCallbackQuery { implicit cbq =>
-    println(s"Callback query received from ${cbq.from.id}: ${cbq.data}")
-    request(SendMessage(cbq.from.id, "Responce to CBQ", replyMarkup = Some(btn())))
+    runR { for {
+      data    <- opt { cbq.data } 
+      _       <- att { println(data) }
+      cmdJson <- exn { parse(data) }
+      cmd     <- exn { cmdJson.as[RadarCommand] }
+      _       <- att { self ! (RadarCommandWrapper(cmd, cbq)) }
+    } yield () }
   }
 
   onCommand('start) { implicit msg =>
-    request(SendMessage(
-      msg.from.get.id
-    , "Hello"
-    , replyMarkup = Some(btn())))
+    self ! Start(msg)
   }
+
+  def mainMenu() = InlineKeyboardMarkup.singleColumn(Seq(
+    InlineKeyboardButton.callbackData("Subscriptions", (Subscriptions: RadarCommand).asJson.pretty(Printer.noSpaces))
+  , InlineKeyboardButton.callbackData("Channels"     , (Channels: RadarCommand)     .asJson.pretty(Printer.noSpaces))
+  ))
+
+  def subscriptions() = InlineKeyboardMarkup.singleColumn(Seq(
+    InlineKeyboardButton.callbackData("Main Menu", (MainMenu: RadarCommand).asJson.pretty(Printer.noSpaces))
+  ))
+
+  def channels() = InlineKeyboardMarkup.singleColumn(Seq(
+    InlineKeyboardButton.callbackData("Main Menu", (MainMenu: RadarCommand).asJson.pretty(Printer.noSpaces))
+  ))
 
   override def receive = {
-    case SetRecipient(id) =>
-      recipient = Some(id)
-    
-    case Update if recipient.isDefined =>
-      log.info(const.log.notifying(recipient.toString))
+    case Start(msg) =>
+      // TODO check if user exists in the database. If not, add them.
       runR { for {
-        evts <- ioe { db.fbevents.listNew }
-        _    <- evts.traverse(sendEvt)
+        user <- opt { msg.from }
+        _    <- att { request(SendMessage(user.id, "Main Menu", replyMarkup = Some(mainMenu()))) }
       } yield () }
+
+    case RadarCommandWrapper(x, cbq) => x match {
+      case MainMenu =>
+        request(SendMessage(cbq.from.id, "Main Menu", replyMarkup = Some(mainMenu())))
+
+      case Subscriptions =>
+        request(SendMessage(cbq.from.id, "Your Subscriptions", replyMarkup = Some(subscriptions())))
+      
+      case Channels =>
+        request(SendMessage(cbq.from.id, "Your Channels", replyMarkup = Some(channels())))
+    }
+    
+
   }
 }
 
-trait CmdHandler[R] {
-  def handle(c: R): Ef[Unit]
-}
-
-object CmdHandler {
-  def apply[R](implicit rch: CmdHandler[R]) = rch
-
-  // TODO use Shapeless generics to derive RCH for a trait
-  // Convert trait to coproduct, do recursive implicit res for each member
-}
+case class Start(msg: TMessage)
+case class RadarCommandWrapper(cmd: RadarCommand, cbq: CallbackQuery)
 
 sealed trait RadarCommand
-case object MainMenu      extends RadarCommand
-case object Channels      extends RadarCommand
 case object Subscriptions extends RadarCommand
-
-trait RadarCommands { this: TelegramBot with Commands =>
-  type CmdHandler = PartialFunction[RadarCommand, Ef[Unit]]
-
-  implicit def mainMenu(cbq: CallbackQuery): CmdHandler[MainMenu.type] =
-    { _ => ??? }
-
-  implicit def subscriptions(cbq: CallbackQuery): CmdHandler[Subscriptions.type] =
-    { _ => ???}
-
-  implicit def channels(cbq: CallbackQuery): CmdHandler[Channels.type] =
-    { _ => ???}
-
-  onCallbackQuery { implicit cbq =>
-    runR { CmdHandler[RadarCommand].handle(cbq.data.decode[RadarCommand]) }
-  }
-}
+case object Channels      extends RadarCommand
+case object MainMenu      extends RadarCommand

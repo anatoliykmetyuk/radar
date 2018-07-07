@@ -33,7 +33,7 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
 
   override def preStart(): Unit = {
     log.info(const.log.codementorStarted)
-    context.system.scheduler.schedule(Zero, 1 minute, self, Update)  // TODO configure update times externally
+    context.system.scheduler.schedule(Zero, 15 minutes, self, Update)  // TODO configure update times externally
   }
 
   override def receive = {
@@ -44,6 +44,7 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
     case GotKey(k) =>
       log.info("Key is successfully registered")
       key = Some(k)
+      self ! Update
 
     case Update if key.isDefined =>
       log.info("Starting Codementor task...")

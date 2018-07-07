@@ -41,7 +41,7 @@ class ChatBot(val token: String) extends Actor
 
   override def preStart(): Unit = {
     log.info("ChatBot started")
-    context.system.scheduler.schedule(Zero, 15 seconds, self, Update)  // TODO configure update times externally
+    context.system.scheduler.schedule(Zero, 1 minute, self, Update)  // TODO configure update times externally
     this.run()
   }
 

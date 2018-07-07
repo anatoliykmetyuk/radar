@@ -33,7 +33,7 @@ class FacebookEvents(target: String, driverManager: ActorRef) extends Actor
 
   override def preStart(): Unit = {
     log.info(const.log.fbEventsStarted(page))
-    context.system.scheduler.schedule(Zero, 30 seconds, self, Update)  // TODO configure update times externally
+    context.system.scheduler.schedule(Zero, 3 hours, self, Update)  // TODO configure update times externally
   }
 
   override def receive = {

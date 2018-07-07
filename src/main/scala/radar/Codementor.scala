@@ -33,14 +33,20 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
 
   override def preStart(): Unit = {
     log.info(const.log.codementorStarted)
-    context.system.scheduler.schedule(Zero, 15 seconds, self, Update)  // TODO configure update times externally
+    context.system.scheduler.schedule(Zero, 1 minute, self, Update)  // TODO configure update times externally
   }
 
   override def receive = {
-    case Update if key.isEmpty => chatBot ! RequestingKey
-    case GotKey(k) => key = Some(k)
+    case Update if key.isEmpty =>
+      log.info("Cannot find the key, requesting it")
+      chatBot ! RequestingKey
+
+    case GotKey(k) =>
+      log.info("Key is successfully registered")
+      key = Some(k)
 
     case Update if key.isDefined =>
+      log.info("Starting Codementor task...")
       run { for {
         k              <- opt { key }
         credentialsOpt <- ioe { db.credentials.get("google") }
@@ -56,13 +62,15 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
   def scrape(credentials: Credentials): RemoteWebDriver => List[Message] = { driver =>
     val targetUrl = "https://www.codementor.io/m/dashboard/open-requests?expertise=related"
     
+    log.info("Trying to access the target page")
     driver.get(targetUrl)
     if (driver.getCurrentUrl.contains("login")) {
-      // driver.get("https://www.codementor.io/login")
+      log.info("Log-in needed")
       login(credentials, driver)
       driver.get(targetUrl)
     }
 
+    log.info("Successfully obtained the target page, starting scraping")
     // Parsing proper
     driver.findElements(By.className("dashboard__open-question-item"))
       .asScala.map(parseRequest).toList

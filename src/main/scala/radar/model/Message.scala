@@ -10,7 +10,8 @@ case class Message(
 , created_at       : Long = time.now
 , notification_sent: Boolean = false) {
 
-  override def toString() = s"$format:$target\n$text\n$link"
+  override def toString() =
+    s"${format}${target.map(t => s":$t").getOrElse("")}\n$text\n$link"
 
   override def equals(that: Any): Boolean = that match {
     case x: Message => x.link == link

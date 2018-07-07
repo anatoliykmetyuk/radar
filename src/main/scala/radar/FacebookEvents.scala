@@ -32,7 +32,7 @@ class FacebookEvents(target: String, driverManager: ActorRef) extends Actor with
 
   override def preStart(): Unit = {
     log.info(const.log.fbEventsStarted(page))
-    context.system.scheduler.schedule(Zero, 1 hour, self, Update)  // TODO configure update times externally
+    context.system.scheduler.schedule(Zero, 30 seconds, self, Update)  // TODO configure update times externally
   }
 
   override def receive = {
@@ -49,8 +49,8 @@ class FacebookEvents(target: String, driverManager: ActorRef) extends Actor with
     case Result(events: List[Message]) =>
       log.info(const.log.receivedEvents(events.length.toString, sender.toString))
       run { for {
-        latest   <- ioe { db.message.listLatest(format, Some(target), Some(10)) }.map(_.toSet)
-        newEvents = events.takeWhile(e => !latest(e))
+        latest   <- ioe { db.message.listLatest(format, Some(target), Some(100)) }.map(_.toSet)
+        newEvents = events.filter(e => !latest(e))
         _        <- ioe { newEvents.traverse(db.message.create) } // TODO batch create
         _         = log.info(const.log.dbWrite(format, newEvents.mkString("\n")))
       } yield () }

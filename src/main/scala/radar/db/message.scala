@@ -20,12 +20,12 @@ object message extends MessageHelpers {
       , created_at
       , notification_sent)
       values (
-        link
-      , text
-      , format
-      , target
+        $link
+      , $text
+      , $format
+      , $target
       , to_timestamp($created_at / 1000)
-      , notification_sent)
+      , $notification_sent)
       """
       .update.withUniqueGeneratedKeys[Int]("id").transact(tr)
   }

@@ -20,14 +20,14 @@ object Main {
 
   val targets = List( // TODO configure targets via chat bot
     "ChasopysEduSpace"
-  , "mimkyiv"
-  , "ucci.org.ua"
+  // , "mimkyiv"
+  // , "ucci.org.ua"
   , "HUB.4.0"
-  , "startaaccelerator"
-  , "kievfprog"
-  , "algoclub"
-  , "newitkpi"
-  , "ProstirChasopys"
+  // , "startaaccelerator"
+  // , "kievfprog"
+  // , "algoclub"
+  // , "newitkpi"
+  // , "ProstirChasopys"
   , "data.science.ua")
 
   def main(args: Array[String]): Unit =

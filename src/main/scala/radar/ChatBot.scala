@@ -9,7 +9,7 @@ import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
 
 import info.mukel.telegrambot4s.api._
-import info.mukel.telegrambot4s.api.declarative.{Commands, InlineQueries}
+import info.mukel.telegrambot4s.api.declarative.{ Commands, InlineQueries, Action }
 import info.mukel.telegrambot4s.models._
 import info.mukel.telegrambot4s.methods._
 
@@ -53,9 +53,12 @@ class ChatBot(val token: String) extends Actor
       _   <- ioe { db.message.markNotified(eId) }
     } yield ()
 
+  def withArgsLst(action: Action[List[String]])(implicit msg: Message): Unit =
+    withArgs { args => action(args.toList) }
+
 
   onCommand('start) { implicit msg =>
-    withArgs {
+    withArgsLst {
       case Nil    => reply("Please specify your codephrase")
       case key :: _ =>
         runR { for {
@@ -73,7 +76,7 @@ class ChatBot(val token: String) extends Actor
   }
 
   onCommand('credentials) { implicit msg =>
-    withArgs { case target :: login :: password :: _ =>
+    withArgsLst { case target :: login :: password :: _ =>
       runR { for {
         k           <- opt { key }
         credentials <- att { Credentials(
@@ -81,6 +84,7 @@ class ChatBot(val token: String) extends Actor
         , login    = login
         , password = password).encrypted(k) }
         _ <- ioe { db.credentials.create(credentials) }
+        _ <- att { reply(s"Your credentials are saved as $credentials.") }
       } yield () }
     }
   }

@@ -25,11 +25,7 @@ trait MessageHandlingActor { this: ActorLogging =>
   
       latest  <- ioe { db.message.listLatest(format, target, Some(takeLatest)) }.map(_.toSet)
       newMsgs  = msgs.filter(e => !latest(e))
-
-      _ = println(s"Latest:\n${latest.map(_.link).mkString("\n")}\n")
-      _ = println(s"Received:\n${msgs.map(_.link).mkString("\n")}\n")
-      _ = println(s"Selected:\n${newMsgs.map(_.link).mkString("\n")}\n")
-
+      
       _       <- ioe { newMsgs.traverse(db.message.create) } // TODO batch create
       _        = log.info(const.log.dbWrite(format, newMsgs.mkString("\n")))
     } yield ()

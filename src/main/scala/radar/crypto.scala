@@ -4,13 +4,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.{ IvParameterSpec, SecretKeySpec }
 
 object crypto {
-  def main(args: Array[String]): Unit = {
-    println(encrypt("anatoliykmetyuk@gmail.com", "monkeys"))
-    println(decrypt("3C47C587D0FAAB82C98632CF3253417668CAA424BC86AF70236FC472EFD76599", "monkeys"))
-  }
-
   val enc = "utf8"
-  val iv  = makeKey("monkeys")
 
   val cipherName = "DES"
   val cipherTransformation = "DES/CBC/PKCS5Padding"
@@ -45,7 +39,7 @@ object crypto {
   def createCipher(mode: Int, keyRaw: String): Cipher = {
     // Next, you'll need the key and initialization vector bytes
     val keyBytes = makeKey(keyRaw)
-    val ivBytes  = iv
+    val ivBytes  = makeKey(keyRaw.reverse)
 
     // Now you can initialize the Cipher for the algorithm that you select:
     // wrap key data in Key/IV specs to pass to cipher

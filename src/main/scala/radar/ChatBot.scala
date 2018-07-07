@@ -17,9 +17,10 @@ import io.circe.yaml
 import cats._, cats.implicits._, cats.effect._, cats.data.{ NonEmptyList => NEL, _ }
 
 import radar.{ run => runR }
+import radar.model.{ Message => RMessage, _ }
 
 
-case class SetRecipient(to: Int)
+case class SetRecipient(to: Int, key: String)
 
 object ChatBot {
   def props(token: String) = Props(classOf[ChatBot], token)
@@ -44,7 +45,7 @@ class ChatBot(val token: String) extends Actor
     this.run()
   }
 
-  def sendEvt(e: Message): Ef[Unit] =
+  def sendMsg(e: RMessage): Ef[Unit] =
     for {
       to  <- opt { recipient }
       eId <- opt { e.id }
@@ -71,16 +72,29 @@ class ChatBot(val token: String) extends Actor
     }
   }
 
+  onCommand('credentials) { implicit msg =>
+    withArgs { case target :: login :: password :: _ =>
+      runR { for {
+        k           <- opt { key }
+        credentials <- att { Credentials(
+          target   = target
+        , login    = login
+        , password = password).encrypted(k) }
+        _ <- ioe { db.credentials.create(credentials) }
+      } yield () }
+    }
+  }
+
   override def receive = {
-    case SetRecipient(id, key) =>
+    case SetRecipient(id, k) =>
       recipient = Some(id)
-      key = Some(key)
+      key = Some(k)
     
     case Update if recipient.isDefined =>
       log.info(const.log.notifying(recipient.toString))
       runR { for {
-        evts <- ioe { db.fbevents.listNew }
-        _    <- evts.traverse(sendEvt)
+        msgs <- ioe { db.message.listNew() }
+        _    <- msgs.traverse(sendMsg)
       } yield () }
   }
 }

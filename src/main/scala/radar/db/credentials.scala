@@ -7,13 +7,25 @@ import doobie._, doobie.implicits._
 import infrastructure.tr
 import radar.model._
 
-object credentials extends CredentialsHelpers{
-  def get(target: String, key: String): Ef[Credentials] =
-    for {
-      cr <- ioe { (selectSql ++ sql"""where target = $target""")
-              .query[Credentials].unique.transact(tr) }
-      res <- decrypt(cr, key)
-    } yield res
+object credentials extends CredentialsHelpers {
+  def get(target: String): IO[Credentials] =
+    (selectSql ++ sql"""where target = $target""")
+      .query[Credentials].unique.transact(tr)
+
+  def create(c: Credentials): IO[Int] = {
+    import c._
+    sql"""
+      insert into credentials (
+        target
+      , login
+      , password)
+      values (
+        $target
+      , $login
+      , $password)
+      """
+      .update.withUniqueGeneratedKeys[Int]("id").transact(tr)
+    }
 }
 
 trait CredentialsHelpers {
@@ -25,6 +37,4 @@ trait CredentialsHelpers {
       , login
       , password
       from credentials"""
-
-  def decrypt(what: Credentials, k: String): Ef[Credentials] = ???
 }

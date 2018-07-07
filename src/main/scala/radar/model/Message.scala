@@ -8,4 +8,14 @@ case class Message(
 , format           : String
 , target           : Option[String]
 , created_at       : Long = time.now
-, notification_sent: Boolean = false)
+, notification_sent: Boolean = false) {
+
+  override def toString() = s"$format:$target\n$text\n$link"
+
+  override def equals(that: Any): Boolean = that match {
+    case x: Message => x.link == link
+    case _ => false
+  }
+
+  override def hashCode(): Int = link.hashCode
+}

@@ -39,13 +39,21 @@ object message extends MessageHelpers {
   def list: IO[List[Message]] =
     selectSql.query[Message].to[List].transact(tr)
 
-  def listNew(take: Option[Int] = None, expiration: Option[Double] = None): IO[List[Message]] =
+  def listNew(expirationDays: Double = 3.0): IO[List[Message]] =
     (selectSql ++ sql"""
       where notification_sent = false and
-      (extract(epoch from current_timestamp-created_at)/(86400::float4)) < ${expiration.getOrElse(Double.MaxValue)}
-      order by created_at asc limit ${take.getOrElse(Int.MaxValue)}
+      (extract(epoch from current_timestamp-created_at)/(86400::float4)) < $expirationDays
+      order by created_at asc
     """)
     .query[Message].to[List].transact(tr)
+
+  def listLatest(format: String, target: Option[String] = None, take: Option[Int] = None): IO[List[Message]] =
+    (selectSql ++ sql"""
+      where format = $format and target = $target
+      order by created_at desc limit $take
+    """)
+    .query[Message].to[List].transact(tr)
+
 
   def get(id: Int): IO[Message] =
     (selectSql ++ sql"""where id = $id""")

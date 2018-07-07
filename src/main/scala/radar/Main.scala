@@ -20,14 +20,14 @@ object Main {
 
   val targets = List( // TODO configure targets via chat bot
     "ChasopysEduSpace"
-  // , "mimkyiv"
-  // , "ucci.org.ua"
+  , "mimkyiv"
+  , "ucci.org.ua"
   , "HUB.4.0"
-  // , "startaaccelerator"
-  // , "kievfprog"
-  // , "algoclub"
-  // , "newitkpi"
-  // , "ProstirChasopys"
+  , "startaaccelerator"
+  , "kievfprog"
+  , "algoclub"
+  , "newitkpi"
+  , "ProstirChasopys"
   , "data.science.ua")
 
   def main(args: Array[String]): Unit =
@@ -45,7 +45,7 @@ object Main {
       cb <- att { as.actorOf(ChatBot.props(token), "ChatBot")  }
 
       // Scraping Actors
-      // _  <- targets.traverse { t => att { as.actorOf(FacebookEvents.props(t, dm), s"FBEvents-$t") } }
+      _ <- targets.traverse { t => att { as.actorOf(FacebookEvents.props(t, dm), s"FBEvents-$t") } }
       _ <- att { as.actorOf(Codementor.props(dm, cb)) }
 
       // Shutdown hook

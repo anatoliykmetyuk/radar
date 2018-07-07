@@ -33,7 +33,7 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
 
   override def preStart(): Unit = {
     log.info(const.log.codementorStarted)
-    context.system.scheduler.schedule(Zero, 30 seconds, self, Update)  // TODO configure update times externally
+    context.system.scheduler.schedule(Zero, 10 seconds, self, Update)  // TODO configure update times externally
   }
 
   override def receive = {

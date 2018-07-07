@@ -100,5 +100,10 @@ class ChatBot(val token: String) extends Actor
         msgs <- ioe { db.message.listNew() }
         _    <- msgs.traverse(sendMsg)
       } yield () }
+
+    case RequestingKey => key match {
+      case Some(k) => sender ! GotKey(k)
+      case None =>
+    }
   }
 }

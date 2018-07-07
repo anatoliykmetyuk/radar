@@ -25,7 +25,8 @@ object FacebookEvents {
     Props(classOf[FacebookEvents], target, driverManager)
 }
 
-class FacebookEvents(target: String, driverManager: ActorRef) extends Actor with ActorLogging {
+class FacebookEvents(target: String, driverManager: ActorRef) extends Actor
+    with ActorLogging with MessageHandlingActor {
   val page = s"https://www.facebook.com/pg/$target/events/"
 
   val format = "fbevent"
@@ -47,13 +48,7 @@ class FacebookEvents(target: String, driverManager: ActorRef) extends Actor with
       driverManager ! Execute(code)
 
     case Result(events: List[Message]) =>
-      log.info(const.log.receivedEvents(events.length.toString, sender.toString))
-      run { for {
-        latest   <- ioe { db.message.listLatest(format, Some(target), Some(100)) }.map(_.toSet)
-        newEvents = events.filter(e => !latest(e))
-        _        <- ioe { newEvents.traverse(db.message.create) } // TODO batch create
-        _         = log.info(const.log.dbWrite(format, newEvents.mkString("\n")))
-      } yield () }
+      run { writeMessagesToDb(events, format, Some(target)) }
   }
 
   def parseEvent(e: WebElement): Message = {

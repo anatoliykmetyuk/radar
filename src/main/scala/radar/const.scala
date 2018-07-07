@@ -16,6 +16,9 @@ object const {
 
     def fbEventsStarted(page: String) =
       s"FacebookEvents started for target $page"
+    
+    val codementorStarted =
+      "Codementor started"
 
     def driverManagerStarted(name: String) =
       s"DriverManager started: $name"
@@ -23,8 +26,8 @@ object const {
     def driverWorkerStarted(name: String) =
       s"DriverWorker started: $name"
 
-    def receivedEvents(evts: String, from: String) =
-      s"Received $evts events from $from"
+    def receivedMessages(evts: String) =
+      s"Received $evts messages"
   }
 
   object err {

@@ -8,9 +8,9 @@ import infrastructure.tr
 import radar.model._
 
 object credentials extends CredentialsHelpers {
-  def get(target: String): IO[Credentials] =
+  def get(target: String): IO[Option[Credentials]] =
     (selectSql ++ sql"""where target = $target""")
-      .query[Credentials].unique.transact(tr)
+      .query[Credentials].option.transact(tr)
 
   def create(c: Credentials): IO[Int] = {
     import c._

@@ -6,7 +6,7 @@ case class Message(
 , link             : String
 , text             : String
 , format           : String
-, target           : Option[String]
+, target           : Option[String] = None
 , created_at       : Long = time.now
 , notification_sent: Boolean = false) {
 

@@ -1,0 +1,105 @@
+package radar
+
+import java.io.File
+import java.net.URL
+import org.apache.commons.io.FileUtils
+
+import scala.collection.JavaConverters._
+
+import org.openqa.selenium.{ WebDriver, WebElement, By }
+import org.openqa.selenium.chrome.{ ChromeDriver, ChromeDriverService, ChromeOptions }
+import org.openqa.selenium.remote.{ RemoteWebDriver, DesiredCapabilities }
+
+import scala.concurrent.duration._, Duration.Zero
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import akka.actor._
+import cats._, cats.implicits._
+
+import radar.model._
+
+case object RequestingKey
+case class GotKey(k: String)
+
+object Codementor {
+  def props(driverManager: ActorRef, chatBot: ActorRef) =
+    Props(classOf[Codementor], driverManager, chatBot)
+}
+
+class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
+    with ActorLogging with MessageHandlingActor {
+  val format = "codementor"
+  var key: Option[String] = None
+
+  override def preStart(): Unit = {
+    log.info(const.log.codementorStarted)
+    context.system.scheduler.schedule(Zero, 30 seconds, self, Update)  // TODO configure update times externally
+  }
+
+  override def receive = {
+    case Update if key.isEmpty => chatBot ! RequestingKey
+    case GotKey(k) => key = Some(k)
+
+    case Update if key.isDefined =>
+      run { for {
+        k              <- opt { key }
+        credentialsOpt <- ioe { db.credentials.get("google") }
+        credentialsEnc <- opt (credentialsOpt, "No credentials found for Google")
+        credentials    <- att { credentialsEnc.decrypted(k) }
+        _              <- att { driverManager ! Execute(scrape(credentials)) }
+      } yield () }
+
+    case Result(msgs: List[Message]) =>
+      run { writeMessagesToDb(msgs, format, None) }
+  }
+
+  def scrape(credentials: Credentials): RemoteWebDriver => List[Message] = { driver =>
+    driver.get("https://www.codementor.io")
+    driver.manage.deleteAllCookies()
+
+    driver.get("https://www.codementor.io/login")
+    
+    def l(msg: String) = log.info(s"CODEMENTOR: $msg")
+
+    l("Login sequence started")
+    // Login sequence
+    val loginBtn = driver.findElement(By.xpath("""/html/body/div[2]/div/div[3]/div/div/form/div[5]/a[3]"""))
+    loginBtn.click()
+
+    val email = driver.findElement(By.xpath("""//*[@id="identifierId"]"""))
+    email.sendKeys(credentials.login)
+    driver.findElement(By.xpath("""//*[@id="identifierNext"]""")).click()
+
+    l("Email submitted")
+    Thread.sleep(1500)
+
+    val password = driver.findElement(By.xpath("""//*[@id="password"]/div[1]/div/div[1]/input"""))
+    password.sendKeys(credentials.password)
+    driver.findElement(By.xpath("""//*[@id="passwordNext"]""")).click()
+
+    l("Password submitted")
+    Thread.sleep(3000)
+
+    // Parsing proper
+    driver.get("https://www.codementor.io/m/dashboard/open-requests?expertise=related")
+
+    l("Parsing started")
+    driver.findElements(By.className("dashboard__open-question-item"))
+      .asScala.map(parseRequest).toList
+  }
+
+  def parseRequest(e: WebElement): Message = {
+    def c(cls: String): String = e.findElement(By.className(cls)).getText
+    val link       = e.getAttribute("href")
+    val title      = c("content-row__header__title")
+    val tags       = c("content-row__header__tags" )
+    val interested = c("content-row__interest"     )
+    val created    = c("content-row__created-at"   )
+    val money      = c("content-row__budget"       )
+
+    Message(
+      format = format
+    , link   = link
+    , text   = s"$tags\n\n$title $money\n$interested\n$created")
+  }
+}

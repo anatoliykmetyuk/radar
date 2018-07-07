@@ -39,9 +39,14 @@ object Main {
 
       // Bootstrap actors
       as <- att { ActorSystem("RadarActors") }
+
+      // Infrastructure Actors
       dm <- att { as.actorOf(DriverManager.props(1), "DriverManager") }  // TODO Make use of more workers
-      _  <- targets.traverse { t => att { as.actorOf(FacebookEvents.props(t, dm), s"FBEvents-$t") } }
-      _  <- att { as.actorOf(ChatBot.props(token), "ChatBot")  }
+      cb <- att { as.actorOf(ChatBot.props(token), "ChatBot")  }
+
+      // Scraping Actors
+      // _  <- targets.traverse { t => att { as.actorOf(FacebookEvents.props(t, dm), s"FBEvents-$t") } }
+      _ <- att { as.actorOf(Codementor.props(dm, cb)) }
 
       // Shutdown hook
       _  <- att { scala.sys.addShutdownHook {

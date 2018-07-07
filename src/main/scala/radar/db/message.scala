@@ -43,17 +43,24 @@ object message extends MessageHelpers {
     (selectSql ++ sql"""
       where notification_sent = false and
       (extract(epoch from current_timestamp-created_at)/(86400::float4)) < $expirationDays
-      order by created_at asc
+      order by created_at desc
     """)
     .query[Message].to[List].transact(tr)
 
   def listLatest(format: String, target: Option[String] = None, take: Option[Int] = None): IO[List[Message]] =
-    (selectSql ++ sql"""
-      where format = $format and target = $target
-      order by created_at desc limit $take
-    """)
-    .query[Message].to[List].transact(tr)
-
+    (target match {
+      case Some(t) =>
+        (selectSql ++ sql"""
+          where format = $format and target = $t
+          order by created_at desc limit $take
+        """)
+      
+      case None =>
+        (selectSql ++ sql"""
+          where format = $format
+          order by created_at desc limit $take
+        """)
+    }).query[Message].to[List].transact(tr)  // TODO DRY
 
   def get(id: Int): IO[Message] =
     (selectSql ++ sql"""where id = $id""")

@@ -33,7 +33,7 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
 
   override def preStart(): Unit = {
     log.info(const.log.codementorStarted)
-    context.system.scheduler.schedule(Zero, 10 seconds, self, Update)  // TODO configure update times externally
+    context.system.scheduler.schedule(Zero, 15 seconds, self, Update)  // TODO configure update times externally
   }
 
   override def receive = {
@@ -54,11 +54,21 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
   }
 
   def scrape(credentials: Credentials): RemoteWebDriver => List[Message] = { driver =>
-    driver.get("https://www.codementor.io")
-    driver.manage.deleteAllCookies()
-
-    driver.get("https://www.codementor.io/login")
+    val targetUrl = "https://www.codementor.io/m/dashboard/open-requests?expertise=related"
     
+    driver.get(targetUrl)
+    if (driver.getCurrentUrl.contains("login")) {
+      // driver.get("https://www.codementor.io/login")
+      login(credentials, driver)
+      driver.get(targetUrl)
+    }
+
+    // Parsing proper
+    driver.findElements(By.className("dashboard__open-question-item"))
+      .asScala.map(parseRequest).toList
+  }
+
+  def login(credentials: Credentials, driver: RemoteWebDriver): Unit = {
     def l(msg: String) = log.info(s"CODEMENTOR: $msg")
 
     l("Login sequence started")
@@ -77,15 +87,8 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
     password.sendKeys(credentials.password)
     driver.findElement(By.xpath("""//*[@id="passwordNext"]""")).click()
 
-    l("Password submitted")
     Thread.sleep(3000)
-
-    // Parsing proper
-    driver.get("https://www.codementor.io/m/dashboard/open-requests?expertise=related")
-
-    l("Parsing started")
-    driver.findElements(By.className("dashboard__open-question-item"))
-      .asScala.map(parseRequest).toList
+    l("Successfully completed the log in sequence")
   }
 
   def parseRequest(e: WebElement): Message = {
@@ -100,6 +103,6 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
     Message(
       format = format
     , link   = link
-    , text   = s"$tags\n\n$title $money\n$interested\n$created")
+    , text   = s"$title\n$tags\n${"$"}$money\n$interested\n$created")
   }
 }

@@ -18,3 +18,6 @@
 All the supported feeds are implemented as separate Akka Actors. You can write new actors to target other sites using existing actors as examples. Actors are bootstrapped from the `radar.Main` class, search for `actorOf` there.
 
 The delay between scrapings can be configured for every actor individually - see their `preStart` method. The chat bot is also implemented as an actor, and the delay between its notifications can also be configured via its `preStart` method.
+
+# Caveats
+Google may challenge you with Captcha when trying to log in to Codementor. You will see it in the log output: Codementor will report that it had logged in successfully, but the page will still be Google's one. If this happens, go [here](https://accounts.google.com/DisplayUnlockCaptcha), press the button and try again.

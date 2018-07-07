@@ -35,7 +35,8 @@ class ChatBot(val token: String) extends Actor
                                     with InlineQueries
                                     with Commands {
 
-  var recipient: Option[Int] = None
+  var recipient: Option[Int   ] = None
+  var key      : Option[String] = None
 
   override def preStart(): Unit = {
     log.info("ChatBot started")
@@ -43,32 +44,37 @@ class ChatBot(val token: String) extends Actor
     this.run()
   }
 
-  def sendEvt(e: FacebookEvent): Ef[Unit] =
+  def sendEvt(e: Message): Ef[Unit] =
     for {
       to  <- opt { recipient }
       eId <- opt { e.id }
       _   <- att { request(SendMessage(to, e.toString)) }
-      _   <- ioe { db.fbevents.markNotified(eId) }
+      _   <- ioe { db.message.markNotified(eId) }
     } yield ()
 
 
   onCommand('start) { implicit msg =>
-    runR { for {
-      user <- opt { msg.from }
-      id    = user.id
-      _    <- att { self ! SetRecipient(id) }
-      _    <- att { reply(
-        s"""Registered your id! Your id is $id.
-           |Your user entity is $user.
-           |Will now feed you with the info you requested.
-        """.stripMargin)}
-      _    <- att { log.info(const.log.registeredRecipient(recipient.toString)) }
-    } yield () }
+    withArgs {
+      case Nil    => reply("Please specify your codephrase")
+      case key :: _ =>
+        runR { for {
+          user <- opt { msg.from }
+          id    = user.id
+          _    <- att { self ! SetRecipient(id, key) }
+          _    <- att { reply(
+            s"""Registered your id! Your id is $id.
+               |Your user entity is $user. Your key is $key.
+               |Will now feed you with the info you requested.
+            """.stripMargin)}
+          _    <- att { log.info(const.log.registeredRecipient(recipient.toString)) }
+        } yield () }
+    }
   }
 
   override def receive = {
-    case SetRecipient(id) =>
+    case SetRecipient(id, key) =>
       recipient = Some(id)
+      key = Some(key)
     
     case Update if recipient.isDefined =>
       log.info(const.log.notifying(recipient.toString))

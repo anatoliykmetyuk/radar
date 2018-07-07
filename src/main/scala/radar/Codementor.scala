@@ -71,7 +71,7 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
       driver.get(targetUrl)
     }
 
-    log.info("Successfully obtained the target page, starting scraping")
+    log.info(s"Successfully obtained the target page, starting scraping. Page: ${driver.getCurrentUrl}")
     // Parsing proper
     driver.findElements(By.className("dashboard__open-question-item"))
       .asScala.map(parseRequest).toList
@@ -97,7 +97,7 @@ class Codementor(driverManager: ActorRef, chatBot: ActorRef) extends Actor
     driver.findElement(By.xpath("""//*[@id="passwordNext"]""")).click()
 
     Thread.sleep(3000)
-    l("Successfully completed the log in sequence")
+    l(s"Successfully completed the log in sequence. Current page: ${driver.getCurrentUrl}")
   }
 
   def parseRequest(e: WebElement): Message = {
